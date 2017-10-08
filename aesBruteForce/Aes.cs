@@ -9,7 +9,7 @@ namespace aesBruteForce
 {
     class Aes
     {
-        public static string decrypt(byte[] input, byte[] key)
+        public static byte[] decrypt(byte[] input, byte[] key)
         {
             var aesAlg = new AesManaged
             {
@@ -22,10 +22,10 @@ namespace aesBruteForce
             };
 
             ICryptoTransform encryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
-            return Encoding.Default.GetString(encryptor.TransformFinalBlock(input, 0, input.Length));
+            return encryptor.TransformFinalBlock(input, 0, input.Length);
         }
 
-        public static string encrypt(byte[] input, byte[] key)
+        public static byte[] encrypt(byte[] input, byte[] key)
         {
             var aesAlg = new AesManaged
             {
@@ -38,7 +38,45 @@ namespace aesBruteForce
             };
 
             ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
-            return Encoding.Default.GetString(encryptor.TransformFinalBlock(input, 0, input.Length));
+            return encryptor.TransformFinalBlock(input, 0, input.Length);
+        }
+
+        internal static byte[] incrementKey(byte[] key)
+        {
+            int keyLastByte = key[key.Length - 1];
+            keyLastByte++;
+            byte[] nextKey = key;
+            nextKey[nextKey.Length - 1] = (byte)keyLastByte;
+            return getNextValidKey(nextKey);
+        }
+
+        public static byte[] getNextValidKey(byte[] keyBytes)
+        {
+            bool carry = false;
+            int i;
+            for (i = keyBytes.Length - 1; i >= 0; i--)
+            {
+                if (carry)
+                {
+                    int keyByte = keyBytes[i];
+                    keyByte++;
+                    keyBytes[i] = (byte)keyByte;
+                    if (keyBytes[i] != 0)
+                    {
+                        carry = false;
+                    }
+                }
+                if (keyBytes[i] < 33)
+                {
+                    keyBytes[i] = (byte)(33);
+                }
+                else if (keyBytes[i] > 126)
+                {
+                    keyBytes[i] = 33;
+                    carry = true;
+                }
+            }
+            return keyBytes;
         }
     }
 }

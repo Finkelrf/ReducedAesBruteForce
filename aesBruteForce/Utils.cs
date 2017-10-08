@@ -37,5 +37,13 @@ namespace aesBruteForce
             string[] lines = System.IO.File.ReadAllLines(path);
             return lines;
         }
+
+        public static byte[] concatenaBytes(byte[] a1, byte[] a2)
+        {
+            byte[] rv = new byte[a1.Length + a2.Length];
+            Buffer.BlockCopy(a1, 0, rv, 0, a1.Length);
+            Buffer.BlockCopy(a2, 0, rv, a1.Length, a2.Length);
+            return rv;
+        }
     }
 }
