@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -9,6 +10,8 @@ namespace aesBruteForce
 {
     class Utils
     {
+        public static string BASE_PATH = @"C:\Users\Finkel\Desktop\Segurança\Desafio5\";
+
         public static string toHex(string input)
         {
             return string.Join(string.Empty, input.Select(c => ((int)c).ToString("X")).ToArray());
@@ -38,6 +41,11 @@ namespace aesBruteForce
             return lines;
         }
 
+        public static void writeToFile(string filename, string[] lines)
+        {
+            System.IO.File.WriteAllLines(filename, lines);
+        }
+
         public static byte[] concatenaBytes(byte[] a1, byte[] a2)
         {
             byte[] rv = new byte[a1.Length + a2.Length];
@@ -45,5 +53,19 @@ namespace aesBruteForce
             Buffer.BlockCopy(a2, 0, rv, a1.Length, a2.Length);
             return rv;
         }
+
+        public static double getPercentage(byte[] start, byte[] end, byte[] actual)
+        {
+            //NOT WORKING
+            BigInteger startBig = new BigInteger(start);
+            BigInteger endBig = new BigInteger(end);
+            BigInteger actualBig = new BigInteger(actual);
+            BigInteger d1 = BigInteger.Multiply(10000, (actualBig - startBig));
+            BigInteger d2 = (endBig - startBig);
+            BigInteger percentage = BigInteger.Divide(d1, d2);
+            double percentageDouble = (double)percentage / 100;
+            return (double)percentageDouble;            
+        }
+
     }
 }
