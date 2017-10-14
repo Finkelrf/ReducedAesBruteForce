@@ -26,44 +26,41 @@ namespace aesBruteForce
             stopwatch.Start();
             //Load encrypted text from file
             string[] plainTextLinesHex = Utils.readFromFile(Utils.BASE_PATH + "D5-GRUPO03.txt");
+            int numberOfThreads = 8;
+
 
             byte[] keyConstant = Encoding.ASCII.GetBytes("Key2Group03");
 
-            byte[] begin1 = Utils.HEX2Bytes("2121212121");
-            byte[] end1 = Utils.HEX2Bytes("3878787877");
-            byte[] begin2 = Utils.HEX2Bytes("3878787878");
-            byte[] end2 = Utils.HEX2Bytes("4fcfcfcfce");
-            byte[] begin3 = Utils.HEX2Bytes("4fcfcfcfcf");
-            byte[] end3 = Utils.HEX2Bytes("6727272726");
-            byte[] begin4 = Utils.HEX2Bytes("6727272727");
-            byte[] end4 = Utils.HEX2Bytes("7e7e7e7e7e");
+            /*  byte[] attackBeginCode = Utils.HEX2Bytes("2121212121");
+            byte[] attackEndCode = Utils.HEX2Bytes("3878787877");*/
 
-            //byte[] begin1 = Utils.HEX2Bytes("2121212121");
-            //byte[] end1 = Utils.HEX2Bytes("2121213021");
-            //byte[] begin2 = Utils.HEX2Bytes("2121212131");
-            //byte[] end2 = Utils.HEX2Bytes("2121212140");
-            //byte[] begin3 = Utils.HEX2Bytes("2121212141");
-            //byte[] end3 = Utils.HEX2Bytes("2121212150");
-            //byte[] begin4 = Utils.HEX2Bytes("2121212151");
-            //byte[] end4 = Utils.HEX2Bytes("2121212160");
-
-            /*últimos 5 têm código ASCII entre 32 e 126 (decimal)*/
+            byte[] attackBeginCode = Utils.HEX2Bytes("2121212121");
+            byte[] attackEndCode = Utils.HEX2Bytes("7e7e7e7e7e");
 
             //Calcular intervalos de keys de cada thread
+            BigInteger attackBeginCodeBig = new BigInteger(attackBeginCode);
+            BigInteger attackEndCodeBig = new BigInteger(attackEndCode);
+            BigInteger range = attackEndCodeBig - attackBeginCodeBig;
+            BigInteger interval = BigInteger.Divide(range, numberOfThreads);
 
-            Thread t1 = new Thread(() => threadTask(keyConstant, begin1, end1, plainTextLinesHex, stopwatch));
-            t1.Name = "Thread 1";
-            t1.Start();
-            Thread t2 = new Thread(() => threadTask(keyConstant, begin2, end2, plainTextLinesHex, stopwatch));
-            t2.Name = "Thread 2";
-            t2.Start();
-            Thread t3 = new Thread(() => threadTask(keyConstant, begin3, end3, plainTextLinesHex, stopwatch));
-            t3.Name = "Thread 3";
-            t3.Start();
-            Thread t4 = new Thread(() => threadTask(keyConstant, begin4, end4, plainTextLinesHex, stopwatch));
-            t4.Name = "Thread 4";
-            t4.Start();
+            Console.WriteLine("Range: " + range.ToString("X"));
+            Console.WriteLine("Interval: " + interval.ToString("X"));
 
+            for(int i = 0; i < numberOfThreads; ++i)
+            {
+                BigInteger beginBig = attackBeginCodeBig + BigInteger.Multiply(interval,i);
+                BigInteger endBig = attackBeginCodeBig + BigInteger.Multiply(interval, i+1) -1;
+                 
+                if(i == (numberOfThreads - 1))
+                {
+                    endBig = attackEndCodeBig;
+                }
+                Console.WriteLine("Thread " + i + ": begin: " + beginBig.ToString("X") + " end: " + endBig.ToString("X"));
+
+                new Thread(() => threadTask(keyConstant, beginBig.ToByteArray(), endBig.ToByteArray(), plainTextLinesHex, stopwatch)).Start();                 
+            }
+
+            Console.ReadKey();
         }
 
         //static void Main()
@@ -107,6 +104,7 @@ namespace aesBruteForce
 
                 //calculate next key
                 actualKey = Aes.incrementKey(actualKey);
+                //Console.WriteLine("Next key: "+new BigInteger(actualKey).ToString("X"));
 
                 if(stopwatch.ElapsedMilliseconds - lastMillis > 60000)
                 {
@@ -114,7 +112,7 @@ namespace aesBruteForce
                     Console.WriteLine(stopwatch.Elapsed+" "+ Thread.CurrentThread.Name +": " +Utils.getPercentage(validBegin, validEnd, actualKey));
                 }
             }
-            Console.ReadKey();
+            //Console.ReadKey();
 
         }
 

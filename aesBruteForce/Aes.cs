@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -43,11 +44,7 @@ namespace aesBruteForce
 
         internal static byte[] incrementKey(byte[] key)
         {
-            int keyLastByte = key[key.Length - 1];
-            keyLastByte++;
-            byte[] nextKey = key;
-            nextKey[nextKey.Length - 1] = (byte)keyLastByte;
-            return getNextValidKey(nextKey);
+            return (new BigInteger(key)+1).ToByteArray();
         }
 
         public static byte[] getNextValidKey(byte[] keyBytes)

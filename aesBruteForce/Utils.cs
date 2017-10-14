@@ -54,17 +54,19 @@ namespace aesBruteForce
             return rv;
         }
 
-        public static double getPercentage(byte[] start, byte[] end, byte[] actual)
+        public static string getPercentage(byte[] start, byte[] end, byte[] actual)
         {
             //NOT WORKING
+            
             BigInteger startBig = new BigInteger(start);
             BigInteger endBig = new BigInteger(end);
             BigInteger actualBig = new BigInteger(actual);
-            BigInteger d1 = BigInteger.Multiply(10000, (actualBig - startBig));
+            BigInteger d1 = BigInteger.Multiply(100, (actualBig - startBig));
             BigInteger d2 = (endBig - startBig);
             BigInteger percentage = BigInteger.Divide(d1, d2);
-            double percentageDouble = (double)percentage / 100;
-            return (double)percentageDouble;            
+            Console.WriteLine("Start: " + startBig.ToString("X") + " End: " + endBig.ToString("X") + " Actual: " + actualBig.ToString("X") + " Percentage: " + percentage.ToString("X"));
+            return percentage.ToString();
+                                
         }
 
     }
