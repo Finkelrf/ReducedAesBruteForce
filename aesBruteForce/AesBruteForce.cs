@@ -25,7 +25,7 @@ namespace aesBruteForce
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
             //Load encrypted text from file
-            string[] plainTextLinesHex = Utils.readFromFile(Utils.BASE_PATH + "D5-GRUPO03.txt");
+            string[] encryptedTextLinesHex = Utils.readFromFile(Utils.BASE_PATH + "D5-GRUPO03.txt");
             int numberOfThreads = 8;
 
 
@@ -57,35 +57,27 @@ namespace aesBruteForce
                 }
                 Console.WriteLine("Thread " + i + ": begin: " + beginBig.ToString("X") + " end: " + endBig.ToString("X"));
 
-                new Thread(() => threadTask(keyConstant, beginBig.ToByteArray(), endBig.ToByteArray(), plainTextLinesHex, stopwatch)).Start();                 
+                Thread t = new Thread(() => threadTask(keyConstant, beginBig.ToByteArray(), endBig.ToByteArray(), encryptedTextLinesHex, stopwatch));
+                t.Name = "" + i;
+                t.Start();
             }
 
             Console.ReadKey();
         }
 
-        //static void Main()
-        //{
-        //    // test main
-        //    var stopwatch = new Stopwatch();
-        //    stopwatch.Start();
-        //    System.Threading.Thread.Sleep(2000);
-        //    Console.WriteLine(stopwatch.Elapsed);
-        //    Console.ReadKey();
-
-        //}
-
-        public static void threadTask(byte[] constantKeyPart, byte[] begin, byte[] end, string[] plainTextHexLines, Stopwatch stopwatch)
+        public static void threadTask(byte[] constantKeyPart, byte[] begin, byte[] end, string[] encryptedTextHexLines, Stopwatch stopwatch)
         {
             byte[] actualKey = Aes.getNextValidKey(begin);
             byte[] validBegin = actualKey.ToArray();
             byte[] validEnd = Aes.getNextValidKey(end);
             var lastMillis = stopwatch.ElapsedMilliseconds;
+            byte[] encryptedFirstLine = Encoding.ASCII.GetBytes(encryptedTextHexLines[0]);
 
             while (!actualKey.SequenceEqual(validEnd))
             {
                 byte[] fullKey = Utils.concatenaBytes(constantKeyPart, actualKey);
                 //Decrypt
-                byte[] decrypted = Aes.decrypt(Encoding.ASCII.GetBytes(plainTextHexLines[0]), fullKey);
+                byte[] decrypted = Aes.decrypt(encryptedFirstLine, fullKey);
 
                 //Check if it is portuguese
                 if (mayBePortuguese(decrypted))
@@ -97,32 +89,27 @@ namespace aesBruteForce
                     Console.WriteLine(Thread.CurrentThread.Name);
                     Console.WriteLine("");
                     Utils.writeToFile(Utils.BASE_PATH + "possibleAnswer\\" + Utils.toHex(Encoding.ASCII.GetString(actualKey)) + ".txt", lines);
-                    //Console.ReadKey();
                 }
-                
-                //Console.ReadKey();
-
+               
                 //calculate next key
                 actualKey = Aes.incrementKey(actualKey);
-                //Console.WriteLine("Next key: "+new BigInteger(actualKey).ToString("X"));
 
-                if(stopwatch.ElapsedMilliseconds - lastMillis > 60000)
+                if (stopwatch.ElapsedMilliseconds - lastMillis > 60000)
                 {
                     lastMillis = stopwatch.ElapsedMilliseconds;
-                    Console.WriteLine(stopwatch.Elapsed+" "+ Thread.CurrentThread.Name +": " +Utils.getPercentage(validBegin, validEnd, actualKey));
+                    Console.WriteLine(stopwatch.Elapsed + " " + Thread.CurrentThread.Name + ": " + Utils.getPercentage(validBegin, validEnd, actualKey));
+                    Console.WriteLine("Thread "+ Thread.CurrentThread.Name+ ": Start: " + new BigInteger(validBegin).ToString("X") + " End: " + new BigInteger(validEnd).ToString("X") + " Actual: " + new BigInteger(actualKey).ToString("X"));
+                    Console.WriteLine();
                 }
             }
-            //Console.ReadKey();
-
         }
 
         private static bool mayBePortuguese(byte[] decrypted)
         {
             //verifica se só existem caracteres válidos para o português
-            // se tiverem 5 ou mais characteres >137 ou  < 32
             int bytesOutOfRange = 0;
             int counter = 0;
-            while (bytesOutOfRange < 5 && counter < decrypted.Length)
+            while (bytesOutOfRange < 6 && counter < decrypted.Length)
             {
                 if (decrypted[counter] < 97 || decrypted[counter] > 122 || decrypted[counter] == 32)
                 {
