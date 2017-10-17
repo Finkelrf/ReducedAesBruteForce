@@ -44,14 +44,16 @@ namespace aesBruteForce
 
         internal static byte[] incrementKey(byte[] key)
         {
-            return (new BigInteger(key)+1).ToByteArray();
+            var a = (new BigInteger(key) + 1).ToByteArray();
+            return getNextValidKey(a);
         }
 
         public static byte[] getNextValidKey(byte[] keyBytes)
         {
             bool carry = false;
             int i;
-            for (i = keyBytes.Length - 1; i >= 0; i--)
+            //for (i = keyBytes.Length - 1; i >= 0; i--)
+            for(i=0; i<keyBytes.Length;i++)
             {
                 if (carry)
                 {
@@ -71,6 +73,7 @@ namespace aesBruteForce
                 {
                     keyBytes[i] = 33;
                     carry = true;
+                    //Console.ReadKey();
                 }
             }
             return keyBytes;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -22,6 +23,15 @@ namespace aesBruteForce
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("Version 0.1");
+            //Tests.anwserTest();
+            if (!Tests.executeAll())
+            {
+                Console.ReadKey();
+                return;
+            }
+
+
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
             //Load encrypted text from file
@@ -29,13 +39,10 @@ namespace aesBruteForce
             int numberOfThreads = 8;
 
 
-            byte[] keyConstant = Encoding.ASCII.GetBytes("Key2Group03");
+            byte[] keyConstant = Utils.asciiToByte("Key2Group03");
 
-            /*  byte[] attackBeginCode = Utils.HEX2Bytes("2121212121");
-            byte[] attackEndCode = Utils.HEX2Bytes("3878787877");*/
-
-            byte[] attackBeginCode = Utils.HEX2Bytes("2121212121");
-            byte[] attackEndCode = Utils.HEX2Bytes("7e7e7e7e7e");
+            byte[] attackBeginCode = Utils.hexToByte("2121212121",true);
+            byte[] attackEndCode = Utils.hexToByte("7e7e7e7e7e",true);
 
             //Calcular intervalos de keys de cada thread
             BigInteger attackBeginCodeBig = new BigInteger(attackBeginCode);
@@ -61,8 +68,6 @@ namespace aesBruteForce
                 t.Name = "" + i;
                 t.Start();
             }
-
-            Console.ReadKey();
         }
 
         public static void threadTask(byte[] constantKeyPart, byte[] begin, byte[] end, string[] encryptedTextHexLines, Stopwatch stopwatch)
@@ -71,7 +76,7 @@ namespace aesBruteForce
             byte[] validBegin = actualKey.ToArray();
             byte[] validEnd = Aes.getNextValidKey(end);
             var lastMillis = stopwatch.ElapsedMilliseconds;
-            byte[] encryptedFirstLine = Encoding.ASCII.GetBytes(encryptedTextHexLines[0]);
+            byte[] encryptedFirstLine = Utils.hexToByte(encryptedTextHexLines[1],false);
 
             while (!actualKey.SequenceEqual(validEnd))
             {
@@ -82,24 +87,28 @@ namespace aesBruteForce
                 //Check if it is portuguese
                 if (mayBePortuguese(decrypted))
                 {
-                    string[] lines = { "Key: " + Utils.toHex(Encoding.ASCII.GetString(actualKey)), "Decrypted: " + Encoding.ASCII.GetString(decrypted), ""+ stopwatch.Elapsed};
+                    string plainText = "";
+                    foreach(var line in encryptedTextHexLines)
+                    {
+                        plainText +=  Utils.byteToAscii(Aes.decrypt(Utils.hexToByte(line,false), fullKey));
+                    }
+                    string[] lines = { "" + stopwatch.Elapsed, "Key: " + Utils.byteToAscii(fullKey), "Decrypted: " + plainText};
                     foreach(var line in lines){
                         Console.WriteLine(line);
                     }
-                    Console.WriteLine(Thread.CurrentThread.Name);
                     Console.WriteLine("");
-                    Utils.writeToFile(Utils.BASE_PATH + "possibleAnswer\\" + Utils.toHex(Encoding.ASCII.GetString(actualKey)) + ".txt", lines);
+                    Utils.writeToFile(Utils.BASE_PATH + "possibleAnswer\\" + Utils.byteToHex(actualKey,true) + ".txt", lines);
                 }
                
                 //calculate next key
                 actualKey = Aes.incrementKey(actualKey);
+                //Console.WriteLine(Utils.byteToHex(actualKey,true));
+                //Console.ReadKey();
 
                 if (stopwatch.ElapsedMilliseconds - lastMillis > 60000)
                 {
                     lastMillis = stopwatch.ElapsedMilliseconds;
-                    Console.WriteLine(stopwatch.Elapsed + " " + Thread.CurrentThread.Name + ": " + Utils.getPercentage(validBegin, validEnd, actualKey));
-                    Console.WriteLine("Thread "+ Thread.CurrentThread.Name+ ": Start: " + new BigInteger(validBegin).ToString("X") + " End: " + new BigInteger(validEnd).ToString("X") + " Actual: " + new BigInteger(actualKey).ToString("X"));
-                    Console.WriteLine();
+                    Console.WriteLine(stopwatch.Elapsed + " Thread " + Thread.CurrentThread.Name + ": " + Utils.getPercentage(validBegin, validEnd, actualKey)+ "(por mil) Start: " + new BigInteger(validBegin).ToString("X") + " End: " + new BigInteger(validEnd).ToString("X") + " Actual: " + new BigInteger(actualKey).ToString("X"));
                 }
             }
         }
